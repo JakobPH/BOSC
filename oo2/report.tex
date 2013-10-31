@@ -1,0 +1,111 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Programming/Coding Assignment
+% LaTeX Template
+%
+% This template has been downloaded from:
+% http://www.latextemplates.com
+%
+% Original author:
+% Ted Pavlic (http://www.tedpavlic.com)
+%
+% Note:
+% The \lipsum[#] commands throughout this template generate dummy text
+% to fill the template out. These commands should all be removed when 
+% writing assignment content.
+%
+% This template uses a Perl script as an example snippet of code, most other
+% languages are also usable. Configure them in the "CODE INCLUSION 
+% CONFIGURATION" section.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass{article}
+
+\usepackage{fancyhdr} % Required for custom headers
+\usepackage{lastpage} % Required to determine the last page for the footer
+\usepackage{extramarks} % Required for headers and footers
+\usepackage[usenames,dvipsnames]{color} % Required for custom colors
+\usepackage{graphicx} % Required to insert images
+\usepackage{listings} % Required for insertion of code
+\usepackage{courier} % Required for the courier font
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+\usepackage[utf8]{inputenc}
+
+% Margins
+\topmargin=-0.45in
+\evensidemargin=0in
+\oddsidemargin=0in
+\textwidth=6.5in
+\textheight=9.0in
+\headsep=0.25in
+
+\linespread{1.1} % Line spacing
+
+% Set up the header and footer
+\pagestyle{fancy}
+\lhead{Jens Egholm Pedersen} % Top left header
+\chead{BOSC - Opgave 2} % Top center head
+\rhead{Torsdag d. 31. oktober, 2013} % Top right header
+\lfoot{} % Bottom left footer
+\cfoot{} % Bottom center footer
+\rfoot{Side\ \thepage\ af\ \protect\pageref{LastPage}} % Bottom right footer
+\renewcommand\headrulewidth{0.4pt} % Size of the header rule
+\renewcommand\footrulewidth{0.4pt} % Size of the footer rule
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+\lstset{
+  numbers=left,
+  stepnumber=1,    
+  firstnumber=1,
+  numberfirstline=true
+}
+
+\begin{document}
+
+\section*{BOSC - Opgave 2}
+Dette er min løsning til opgaverne i den anden obligatoriske opgave. Kodefilerne er vedhæftet som appendiks. 
+
+\subsection*{Opgave 1}
+Følgende output viser en af kørslerne af programmet \texttt{sqrt.c}:
+\begin{verbatim}
+Thread : 1 	 Speedup: 1.000000 	 Efficiency: 1.000000
+Threads: 4 	 Speedup: 1.193548 	 Efficiency: 0.298387
+Threads: 8 	 Speedup: 1.913793 	 Efficiency: 0.239224
+Threads: 16 	 Speedup: 2.361702 	 Efficiency: 0.147606
+Threads: 32 	 Speedup: 3.468750 	 Efficiency: 0.108398
+Threads: 64 	 Speedup: 5.285714 	 Efficiency: 0.082589
+Threads: 128 	 Speedup: 5.842105 	 Efficiency: 0.045641
+Threads: 256 	 Speedup: 5.045455 	 Efficiency: 0.019709
+Threads: 512 	 Speedup: 3.264706 	 Efficiency: 0.006376
+Threads: 1024 	 Speedup: 2.642857 	 Efficiency: 0.002581
+Threads: 2048 	 Speedup: 1.913793 	 Efficiency: 0.000934
+Threads: 4096 	 Speedup: 1.353659 	 Efficiency: 0.000330
+Threads: 8192 	 Speedup: 0.740000 	 Efficiency: 0.000090
+Threads: 16384 	 Speedup: 0.417293 	 Efficiency: 0.000025
+\end{verbatim}
+Det ses at det maksimale speedup findes ved 128 tråde, som er hele 5.8 gange mere effektivt end kun 1 tråd. 
+
+\subsection*{Opgave 2}
+Problemet med flere tråde i dette eksempel er særligt det bogen nævner som 'data dependency': deling af ressourcer. Når en tråd eksempelvis beslutter sig for at lægge et nyt element i listen kan den risikere at blive afbrudt midt i kaldet til \texttt{list\_add}, eksempelvis lige efter den har sat \texttt{last->next}. Den anden tråd der afbryder har også tænkt sig at indsætte et element, men når modsat den første tråd at gennemføre. Når den første tråd fortsætter, har den anden tråd overskrevet referencen til \texttt{next} i det sidste element i listen, men det ved den første tråd jo ikke, så den indsætter elementet i halen. Vi har nu en inkonsistent liste, hvis haleelement ikke har en pegepind fra det forrige element i listen.
+
+
+
+\newpage
+
+\section*{Appendiks}
+Jeg har inkluderet \texttt{sqrt.c}, \texttt{list.c}, ...  \texttt{Makefile}, som er de eneste filer hvori jeg har tilføjet funktionalitet.
+
+\section*{Appendiks A - bosh.c}
+\lstinputlisting[language=C]{bosh.c}
+
+\newpage
+
+\section*{Appendiks B - Makefile}
+\lstinputlisting[language=make]{Makefile}
+
+\end{document}

@@ -1,0 +1,117 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Programming/Coding Assignment
+% LaTeX Template
+%
+% This template has been downloaded from:
+% http://www.latextemplates.com
+%
+% Original author:
+% Ted Pavlic (http://www.tedpavlic.com)
+%
+% Note:
+% The \lipsum[#] commands throughout this template generate dummy text
+% to fill the template out. These commands should all be removed when 
+% writing assignment content.
+%
+% This template uses a Perl script as an example snippet of code, most other
+% languages are also usable. Configure them in the "CODE INCLUSION 
+% CONFIGURATION" section.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass{article}
+
+\usepackage{fancyhdr} % Required for custom headers
+\usepackage{lastpage} % Required to determine the last page for the footer
+\usepackage{extramarks} % Required for headers and footers
+\usepackage[usenames,dvipsnames]{color} % Required for custom colors
+\usepackage{graphicx} % Required to insert images
+\usepackage{listings} % Required for insertion of code
+\usepackage{courier} % Required for the courier font
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+\usepackage[utf8]{inputenc}
+
+% Margins
+\topmargin=-0.45in
+\evensidemargin=0in
+\oddsidemargin=0in
+\textwidth=6.5in
+\textheight=9.0in
+\headsep=0.25in
+
+\linespread{1.1} % Line spacing
+
+% Set up the header and footer
+\pagestyle{fancy}
+\lhead{Jens Egholm Pedersen} % Top left header
+\chead{BOSC - Opgave 1} % Top center head
+\rhead{Torsdag d. 3. oktober, 2013} % Top right header
+\lfoot{} % Bottom left footer
+\cfoot{} % Bottom center footer
+\rfoot{Side\ \thepage\ af\ \protect\pageref{LastPage}} % Bottom right footer
+\renewcommand\headrulewidth{0.4pt} % Size of the header rule
+\renewcommand\footrulewidth{0.4pt} % Size of the footer rule
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+\lstset{
+  numbers=left,
+  stepnumber=1,    
+  firstnumber=1,
+  numberfirstline=true
+}
+
+\begin{document}
+
+\section*{BOSC - Opgave 1}
+Dette er min løsning til en BOSC shell (bosh). Koden er vedhæftet i appendikset. I henhold til det første krav har jeg ikke anvendt andet end c-kode til at eksekvere de indtastede kommandoer. Alle opgaver er blevet testet, men jeg vil undlade at beskrive alt for trivielle tests, for i stedet at fokusere på de mindre åbenlyse detaljer.
+
+\subsection*{Hostnavn}
+Jeg har i linje 29 i \texttt{bosh.c} hentet informationen fra filen \textit{/proc/sys/kernel/hostname}. I linje 29 hentes filen, informationen
+hentes ud og gemmes i et char-array. For at frigive ressourcen igen, lukkes file og en pointer til navnet returneres.
+
+\subsection*{Almindelige kommandoer}
+Kommandoerne køres via \texttt{exec} kommandoen (linje 47), som erstatter den kaldende process med en ny process, hvis navn er givet ved det første parameter. Hvis der findes et program med det givne navn, eksekveres det og stopper efterfølgende processen. Det betyder også at jeg har været nødt til at anvende \texttt{fork} for at skabe en ny process, som kan dø i fred, uden at vores kommandoprompt lukker ned (linje 92). \\
+
+Jeg har valgt at bruge \texttt{execvp} som, modsat \texttt{execl*}-familien, tager et array som input til argumenter. Det er nyttigt i vores situation fordi vores parser allerede serverer et array med argumenter. \\
+
+Hvis \texttt{execvp} ikke finder kommandoen printer den en fejlmeddelelse og terminerer (linje 48).
+
+\subsection*{Baggrundsprocesser}
+Siden kommandoer allerede får deres egne processer, har jeg løst denne opgave ved blot at unlade at vente på at kommando-processen terminerer (linje 116). For at undgå at processer forvandles til 'zombier', sender vi et signal til kernen i linje 117 om at vi ikke skal bruge processen bagefter. Hvis en bruger ønsker at køre en process i baggrunden, printer jeg en kort besked og et id, så brugeren kan finde processen igen til fx at lukke den ned hvis den hænger. Hvis ikke venter vi simpelt nok på at jobbet køres færdigt (linje 121). Siden baggrundskommandoerne har fået deres egen process er bosh terminalen uafhængig af dem. Brugeren kan derfor uden problemer oprette parallelle jobs uafhængigt af de foregående (og bosh). \\
+At processer blev oprettet, kørt og lukket korrekt og ikke blev forvandlet til zombier, testede jeg ved at køre \texttt{ps -ef | grep} efterfulgt af processens id.
+
+\subsection*{Omdirrigering}
+Ved output omdirrigering duplikere jeg fildeskriptoren i linje 106 for \texttt{stdout} til det ønskede output \texttt{out}. Siden det sker i den første processen før jeg yderligere forgrener eksekveringen ved pipes (beskrives senere), og at den process først returnerer når alle underliggende processer har termineret, vil det endelige produkt blive skrevet til det givne \texttt{out}. Det er ønskværdigt fordi vi kun er interesseret i det endelige resultat af kommandorækken. \\
+Ved omdirrigering af input, var der et lille dilemma idet der i en pipe-kæde er mange muligheder for input-redirection. Jeg har forsimplet opgaven og kun gjort det muligt at lave input-redirection i den første kommando. Det ses i linjerne 58 og 84, der begge ender i linje 47. Her erstattes argumentet til \texttt{execvp} med det ønskede input. \\
+Disse omdirrigeringer blev testet ved at henholdsvis skrive og læse til disk.
+
+\subsection*{Pipes}
+Pipes udgjorde en interessant udfordring fordi bosh skulle kunne håndtere flere forskellige 'lag' af pipes, udover de tidligere krav. Jeg har løst det ved rekursivt at eksekvere kommandoer, således at den første kommandos output bliver den næste kommandos input (ved hjælp at \texttt{dup2}, jævnfør linje 71 (skrive) og 77 (læse)). Den rekursive del sker i linje 73 hvor vi undersøger om der findes en pointer til \texttt{cmd->next} i linje 56. Pipes bliver defineret i linje 60 og initialiseret i 61. \\
+Pipes blev testet ved hjælp af det foreslåede \texttt{ls | wc -w} og derivationer af det. Jeg testede også at omdirrigeringer og baggrundsprocesser virkede med pipes.
+
+\subsection*{Exit}
+Exit-mekanismen er implementeret i linje 150. For at undgå for meget spildtid med at starte processer og lignende lagde jeg det lige efter brugeren har indtastet kommandoen. I linjen derefererer jeg \texttt{shellcmd} til en pointer så jeg kan tilgå først et array over kommandoerne og så det førstkomne ord fra inputtet. Dernæst returnerer jeg 0 for at indikere at programmet er færdig uden uregelmæssigheder.
+
+\subsection*{Signals}
+Jeg har implementeret et \texttt{SIGINT} signal i linje 129 og 35. Når programmet modtager et signal bliver det således håndteret i \texttt{signalcallback}, som undersøger om der er en kørende process. Hvis det er tilfældet slår vi processen ihjel ved at sende den et \texttt{SIGTERM} signal om at stoppe. \texttt{SIGINT} og \texttt{SIGTERM} er næsten identiske, men hvor \texttt{SIGINT} beder om at \textit{afbryde} en process, forespørger \texttt{SIGTERM} at processen \textit{terminerer}.\\
+Signalet er hovedsageligt testet med \texttt{sleep} programmet.
+
+\newpage
+
+\section*{Appendiks}
+Jeg har inkluderet \texttt{bosh.c} samt \texttt{Makefile}, som er de eneste filer hvori jeg har tilføjet funktionalitet.
+
+\section*{Appendiks A - bosh.c}
+\lstinputlisting[language=C]{bosh.c}
+
+\newpage
+
+\section*{Appendiks B - Makefile}
+\lstinputlisting[language=make]{Makefile}
+
+\end{document}
