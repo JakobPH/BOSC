@@ -93,19 +93,77 @@ Det ses at det maksimale speedup findes ved 128 tråde, som er hele 5.8 gange me
 \subsection*{Opgave 2}
 Problemet med flere tråde i dette eksempel er særligt det bogen nævner som 'data dependency': deling af ressourcer. Når en tråd eksempelvis beslutter sig for at lægge et nyt element i listen kan den risikere at blive afbrudt midt i kaldet til \texttt{list\_add}, eksempelvis lige efter den har sat \texttt{last->next}. Den anden tråd der afbryder har også tænkt sig at indsætte et element, men når modsat den første tråd at gennemføre. Når den første tråd fortsætter, har den anden tråd overskrevet referencen til \texttt{next} i det sidste element i listen, men det ved den første tråd jo ikke, så den indsætter elementet i halen. Vi har nu en inkonsistent liste, hvis haleelement ikke har en pegepind fra det forrige element i listen.
 
+Den færdige implementation kan findes i bilag \ref{listcode}.
 
+\subsection*{Opgave 3}
+Som beskrevet i opgaven har jeg skrevet programmet til at tage fire inputs: antal producers, antal consumers, størrelsen af den delte buffer og antal produkter der skal produceres. Alle producers og consumers kører i deres egen tråd hvor de 'sover' hver gang de producerer eller konsumerer. Pga. semaphorerne er der ingen starvation eller deadlocks, og programmet venter til sidst på alle tråde før det slutter. Programkoden findes i appendiks \ref{prodconscode}.
+
+En kørsel af programmet kan ses herunder:
+\begin{verbatim}
+% ./prodcons 6 6 10 9 
+Initialising 6 producers and 6 consumers with a buffer size of 10
+Producer   5 produced  Elm 5. Items in buffer:   1 (out of  10).
+Consumer   1 consumed  Elm 5. Items in buffer:   0 (out of  10).
+Producer   5 produced  Elm 4. Items in buffer:   1 (out of  10).
+Consumer   4 consumed  Elm 4. Items in buffer:   0 (out of  10).
+Producer   3 produced  Elm 3. Items in buffer:   1 (out of  10).
+Consumer   5 consumed  Elm 3. Items in buffer:   0 (out of  10).
+Producer   2 produced  Elm 1. Items in buffer:   1 (out of  10).
+Consumer   2 consumed  Elm 1. Items in buffer:   0 (out of  10).
+Producer   0 produced  Elm 6. Items in buffer:   1 (out of  10).
+Consumer   0 consumed  Elm 6. Items in buffer:   0 (out of  10).
+Producer   5 produced  Elm 8. Items in buffer:   1 (out of  10).
+Consumer   3 consumed  Elm 8. Items in buffer:   0 (out of  10).
+Producer   2 produced  Elm 2. Items in buffer:   1 (out of  10).
+Producer   3 produced  Elm 9. Items in buffer:   2 (out of  10).
+Producer   5 produced  Elm 7. Items in buffer:   3 (out of  10).
+Consumer   1 consumed  Elm 2. Items in buffer:   2 (out of  10).
+Consumer   4 consumed  Elm 9. Items in buffer:   1 (out of  10).
+Consumer   5 consumed  Elm 7. Items in buffer:   0 (out of  10).
+\end{verbatim}
+
+\subsection*{Opgave 4}
+Jeg allokerer resourcer fra linje 172 vha. \texttt{malloc} og tjekker derefter i linje 232 (\texttt{issafe()} i linje 136) at vi er i en sikker tilstand. Resourcerne bliver frigivet igen i linje 252.
+
+\texttt{resource\_request} metoden er skrevet ved først at undersøge om vi bliver efterladt i en sikker tilstand efter forespørgslen er udført. Hvis vi gør allokeres resourcerne, hvis ikke returnerer vi 0 for 
+\texttt{false}. Før nogle operationer på \texttt{s} bliver udført, låses \texttt{state\_mutex}. Så snart de er færdige låses den op igen.
+
+\texttt{resource\_release} er implementeret ved simpelt nok at fjerne resourcerne igen. Der er også her brugt en mutex til at sikre at vi er alene om vores data i den kritiske zone. Dermed undgår vi også race conditions fordi vi er sikre på at når låsen opnåes, vil den frigives igen efter et stykke tid.
 
 \newpage
 
 \section*{Appendiks}
-Jeg har inkluderet \texttt{sqrt.c}, \texttt{list.c}, ...  \texttt{Makefile}, som er de eneste filer hvori jeg har tilføjet funktionalitet.
+Jeg har inkluderet \texttt{sqrt.c}, \texttt{list.c}, \texttt{prodcons.c}, \texttt{banker.c} samt \texttt{Makefile} i dette appendiks, som er de eneste filer hvori jeg har tilføjet funktionalitet.
 
-\section*{Appendiks A - bosh.c}
-\lstinputlisting[language=C]{bosh.c}
+\label{sqrtcode}
+\section*{Appendiks A - sqrt.c}
+\lstinputlisting[language=C]{sqrt.c}
 
 \newpage
+\label{listcode}
+\section*{Appendiks B - list.c}
+\lstinputlisting[language=C]{list/list.c}
 
-\section*{Appendiks B - Makefile}
+\newpage
+\label{prodconscode}
+\section*{Appendiks C - prodcons.c}
+\lstinputlisting[language=C]{prodcons.c}
+
+\newpage
+\label{bankercode}
+\section*{Appendiks D - banker.c}
+\lstinputlisting[language=C]{banker/banker.c}
+
+\newpage 
+
+\section*{Appendiks E - Makefiles}
+\subsection*{Makefile for \texttt{sqrt} and \texttt{prodcons}}
 \lstinputlisting[language=make]{Makefile}
+\subsection*{Makefile for \texttt{list}}
+\lstinputlisting[language=make]{list/Makefile}
+\subsection*{Makefile for \texttt{banker}}
+\lstinputlisting[language=make]{banker/Makefile}
+
+\label{lastPage}
 
 \end{document}

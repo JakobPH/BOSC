@@ -44,7 +44,7 @@ int should_produce(void) {
 
 void * consume(void * param) {
   Node * node;
-  int * id = (int *) param;
+  int id = *(int *) param;
   
   // Loop
   while (should_consume()) {
@@ -52,14 +52,14 @@ void * consume(void * param) {
     sem_wait(&full);
     node = list_remove(buffer);
     sem_post(&empty);
-    printf("Consumer %3d consumed %6s. Items in buffer: %3d (out of %3d).\n", *id, (char *) node->elm, buffer->len, max_buffer_size);
+    printf("Consumer %3d consumed %6s. Items in buffer: %3d (out of %3d).\n", id, (char *) node->elm, buffer->len, max_buffer_size);
   }
   pthread_exit(0);
 }
 
 void * produce(void * param) {
   Node * node;
-  int * id = (int *) param;
+  int id = *(int *) param;
   int name;
 
   while((name = should_produce())) {
@@ -70,7 +70,7 @@ void * produce(void * param) {
     node = node_new_str(str);
     list_add(buffer, node);
     sem_post(&full);
-    printf("Producer %3d produced %6s. Items in buffer: %3d (out of %3d).\n", *id, str, buffer->len, max_buffer_size);
+    printf("Producer %3d produced %6s. Items in buffer: %3d (out of %3d).\n", id, str, buffer->len, max_buffer_size);
   }
   pthread_exit(0);
 }

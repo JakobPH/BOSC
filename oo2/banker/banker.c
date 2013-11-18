@@ -30,12 +30,44 @@ void Sleep(float wait_time_ms)
    results in a safe state and return 1, else return 0 */
 int resource_request(int i, int *request)
 {
-  return 0;
+  pthread_mutex_lock(&state_mutex);
+  int a, l, r = 1, sum = 0;
+  for (l = 0; l < m; l++) {
+    if (s->max[i][l] - s->allocation[i][l] < request[l]) {
+      r = 0;
+      break;
+    }
+    sum += request[l];
+  }
+  a = s->available[i];
+  pthread_mutex_unlock(&state_mutex);
+
+  if (r || sum > a) {
+    // Allocate the resources
+    pthread_mutex_lock(&state_mutex);
+    for (l = 0; l < m; l++) {
+      s->allocation[i][l] = s->allocation[i][l] + request[l];
+    }
+    s->available[i] = sum;
+    pthread_mutex_unlock(&state_mutex);
+    return 0; 
+  } else return 1;
 }
 
 /* Release the resources in request for process i */
 void resource_release(int i, int *request)
 {
+  pthread_mutex_lock(&state_mutex);
+  int l, v, sum = 0;
+  for (l = 0; l < m; l++) {
+    v = s->allocation[i][l] - request[l];
+    if (v < 0) v = 0;
+    s->allocation[i][l] = v;
+    sum += v;
+  }
+  // Update available
+  s->available[i] = sum;
+  pthread_mutex_unlock(&state_mutex);
 }
 
 /* Generate a request vector */
@@ -88,17 +120,67 @@ void *process_thread(void *param)
   free(request);
 }
 
+void * allocate(int ** arr, int i, int rows) {
+  int n;
+  for (n = 0; n < i; n++) {
+    arr[n] = (int *) malloc(sizeof(int) * rows);
+  }
+}
+
+void * freearr(int ** arr) {
+  int i;
+  for (i = 0; i < m; i++) free(arr[i]);
+  free(arr);
+}
+
+int issafe(void) {
+  int i, j, available, sum;
+  pthread_mutex_lock(&state_mutex);
+  for (i = 0; i < m; i++) {
+    available = 0;
+    sum = 0;
+    for (j = 0; j < n; j++) {
+      if (s->max[i][j] - s->allocation[i][j] != s->need[i][j]) {
+	printf("Relationship between max, allocation and need unsafe");
+        sum += s->allocation[i][j];
+	return 0;
+      }
+      available = s->resource[i] - sum;
+    }
+    if (available != s->available[i]) {
+      printf("A: %d  %d\n", available, s->available[i]);
+      printf("The available vector is not safe.\n");
+      return 0;
+    }
+  }
+   
+  pthread_mutex_unlock(&state_mutex);
+  return 1;
+}
+
 int main(int argc, char* argv[])
 {
   /* Get size of current state as input */
   int i, j;
   printf("Number of processes: ");
-  scanf("%d", &m);
+  scanf("%d", &m); // customers
   printf("Number of resources: ");
-  scanf("%d", &n);
+  scanf("%d", &n); 
+  printf("Hi %d %d\n\n", n, m);
 
   /* Allocate memory for state */
-  if (s == NULL) { printf("\nYou need to allocate memory for the state!\n"); exit(0); };
+  s = malloc(sizeof(State));
+  s->resource   = malloc(sizeof(int) * m);
+  s->available  = malloc(sizeof(int) * m);
+  s->max        = malloc(sizeof(int *) * m);
+  s->allocation = malloc(sizeof(int *) * m);
+  s->need       = malloc(sizeof(int *) * m);
+  allocate(s->max, m, n);
+  allocate(s->allocation, m, n);
+  allocate(s->need, m, n);
+
+  // Init mutex
+  pthread_mutex_init(&state_mutex, NULL);
 
   /* Get current state as input */
   printf("Resource vector: ");
@@ -147,6 +229,10 @@ int main(int argc, char* argv[])
   printf("\n");
 
   /* If initial state is unsafe then terminate with error */
+  if (!issafe()) {
+    printf("Initial state unsafe!. Exiting.\n");
+    exit(1);
+  }
 
   /* Seed the random number generator */
   struct timeval tv;
@@ -163,4 +249,11 @@ int main(int argc, char* argv[])
   free(tid);
 
   /* Free state memory */
+  freearr(s->allocation);
+  freearr(s->max);
+  freearr(s->need);
+  free(s->resource);
+  free(s->available);
+  free(s);
+  
 }
