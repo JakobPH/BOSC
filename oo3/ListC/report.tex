@@ -121,7 +121,7 @@ Sweep fasen løber hoben igennem for blokke der har en længde over nul. For nuv
 Løsningen er testet ved at køre eksempel 30, 35 og 36. Alle med det forventede resultat.
 
 \subsection*{Opgave 3}
-Forskellen fra opgave to er at vi her i linje 543 tjekker om det efterfølgende element er frit (hvidt). Hvis det er, forøger vi den nuværende bloks størrelse med den efterfølgende bloks størrelse plus en (for at overskrive det ekstra blok-hoved). Fremfor at returnere \texttt{void} returnerer \texttt{sweepBlock3} nu også et tal, som repræsenterer længden af den sweepede blok, da den kan variere alt efter om den efterfølgende blok er fri.
+Forskellen fra opgave to er at vi her i linje 539 tjekker om det efterfølgende element er frit (hvidt). Hvis det er, forøger vi den nuværende bloks størrelse med den efterfølgende bloks størrelse plus en (for at overskrive det ekstra blok-hoved). Fremfor at returnere \texttt{void} returnerer \texttt{sweepBlock3} nu også et tal, som repræsenterer længden af den sweepede blok, da den kan variere alt efter om den efterfølgende blok er fri.
 
 Ligesom ovenfor er løsningen testet med eksempel 30, 35 og 36. Resultatet var en markant reduktion i antallet af blokke, siden de blev slået sammen.
 
@@ -130,6 +130,12 @@ Men det kan gøres endnu bedre. I stedet for kun at undersøge det efterfølgend
 
 Ved samme test som ovenfor blev antallet af blokke på frilisten yderligere reduceret, siden samtlige sideliggende blokke nu kobles sammen.
 
+\subsection*{Opgave 5}
+Denne opgave er løst ved hjælp at to loops i \texttt{markPhase5}: et der markerer blokke der umiddelbart kan nås fra stakken med grå efterfulgt af en løkke der traverserer hoben. Den anden lække kører indtil der ikke er flere grå blokke på stakken. For hvert element i hoben undersøger løkken om der findes grå elementer. Alle grå elementer farves sorte og alle hvide elementer der kan nås fra det grå elements data-felter farves grå. På den måde kan nås alle blokke der kan refereres fra stakken gennem nogle iterationer.
+
+Løsningen blev testet med ex30, ex35 og ex36 med samme resultat som i opgave 4, hvilket må betegnes som en success.
+
+\subsection*{Opgave 6}
 
 
 \newpage
