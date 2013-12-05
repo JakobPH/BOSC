@@ -71,15 +71,15 @@
 Dette er min løsning til opgaverne i den tredje obligatoriske opgave. Kodefilerne er vedhæftede som appendiks. 
 
 \subsubsection*{Definitioner}
-Følgende afsnit definerer kort nogle begreber jeg anvender i rapporten. Afsnittet eksisterer primært fordi jeg skriver på dansk, og der således kan opstå begrebsforvirring mellem de danske og engelske termer.
+Følgende afsnit definerer kort nogle begreber jeg anvender i rapporten. Afsnittet eksisterer dels for at introducere begreberne og dels fordi jeg skriver på dansk, og der således kan opstå begrebsforvirring mellem de danske og engelske termer.
 
-En \textit{basepointer} (BP) det første indeks hvorfra data kan gemmes. Al data som programmet kan tilgå (eller burde få lov til at tilgå) ligger med en positiv afstand fra nul til størrelsen på stakken, relativt til BP. En \textit{stackpointer} (SP) er et tal, der definerer det største indeks, hvor der er gemt data på stakken. Den vil derfor altid være et tal mellem nul og størrelse på stakken - undtagen i starten, hvor intet data ligger på stakken og den derfor er -1. En \texttt{program counter} (PC) er et tal, der beskriver positionen på den stack-frame der skal eksekveres.
+En \textit{basepointer} (BP) det første indeks hvorfra data kan gemmes. Al data som programmet kan tilgå (eller burde få lov til at tilgå) ligger med en positiv afstand fra nul til størrelsen på stakken, relativt til BP. En \textit{stackpointer} (SP) er et tal, der definerer det største indeks, hvor der er gemt data på stakken. En \texttt{program counter} (PC) er et tal, der beskriver positionen på den stack-frame der skal eksekveres.
 
 En \textit{friliste} er en hæklet liste af døde blokke - altså blokke med hukommelse der ikke længere bliver brugt. Denne friliste konstrueres ved at anvende et referere til et blok-hovede som den første frie blok. Referencen til næste frie blok gemmes som til i det første data-felt efter blok-hovedet. 
 
 En \textit{garbage collector} (GC) er en mekanisme der anvendes til at frigøre hukommelse ved at samle døde blokke og gemme dem på frilisten. Disse blokke kan herefter anvendes af det kørende program til at gemme data i.
 
-En \textit{blok} i hoben er en række af heltal i hoben der består af et \textit{blokhoved} på og nul eller flere heltal som dets data. Blokken inteholder et \textit{markat} som beskriver typen af data i blokken, en længde som beskriver antallet af elementer i blokken samt en farve som bruges til GC.
+En \textit{blok} i hoben er en række af heltal der består af et \textit{blokhoved} efterfulgt af nul eller flere bits af data, grupperet i blokke af fire bytes. Blok-hovedet inteholder et \textit{markat} som beskriver typen af data i blokken, en længde som beskriver antallet af elementer i blokken samt en farve som bruges til GC.
 
 \subsection*{Opgave 1}
 Før jeg beskriver de faktiske instruktioner, vil jeg gerne kortlægge makroerne \texttt{Tag} og \texttt{Untag}. Siden vi arbejder med garbage collection (GC) har vi brug for en måde at skelne mellem data på stakken og referencer til hoben. For at lave en ikke-konservatic\footnote{En konservativ GC er en GC der antager at alle mønstre kan være tal. Det tjekkes som regel ved at undersøge om tallet, anvendt som pointer, peger på en tilgængelig hukommelsesblok der kan tolkes som data. Det kan bl.a. resultere i falske positive og skabe hukommelseslækager (Sestofte: \textit{Programming Language Concepts}, 2012, s. 183).} GC bliver vi nødt til at kunne identificere adresser, så de kan følges til hoben, så GC algoritmen kan skelne mellem fri og ikke fri hukommelse. Denne identifikation sker ved at tilføje en 1-bit til den mindst betydende position. Det har en del implikationer i praksis som jeg ikke har plads til at diskutere her.
@@ -136,20 +136,31 @@ Denne opgave er løst ved hjælp at to loops i \texttt{markPhase5}: et der marke
 Løsningen blev testet med ex30, ex35 og ex36 med samme resultat som i opgave 4, hvilket må betegnes som en success.
 
 \subsection*{Opgave 6}
+Implementeringen af two-space stop-and-copy GC tager udgangspunkt i \texttt{copyFromTo} funktionen på linje 404. Først sættes frilisten til at pege på til-hoben hvorefter alle blokke (inklusive indhold) der er refereret fra stakken lægges over på til-hoben. En vigtig detalje er, at når en blok kopieres, gemmes en reference til dens nye adresse så den ikke kan kopieres flere gange. Når stak-referencerne er kopieret gennemgås til-hoben for referencer til den fra-hoben. Disse bliver også kopieret til til-hoben.
 
+Denne metode sikrer at det kun er de levende blokke der ligges over uden at fragmentere hoben. Samtlige døde blokke lægger nu på fra-hoben, som vi ignorerer ved at sætte et nyt blok-hoved med samme størrelse som hele hoben. Til sidst bytter de to hobe plads så fra-hoben bliver til til-hoben og omvendt, så \texttt{allocate} kan finde nye ledige pladser og så den næste runde af two-sspace stop-and-copy can udnytte pladsen på den nye til-hob.
+
+Modsat opgavebeskrivelsens forslag er \texttt{copy} ikke rekursiv. Det kunne den sagtens være en mulighed, men jeg ville gerne forberede til opgave 7 som jeg desværre ikke nåede at lave. 
+
+Koden er testet ved hjælp af ex30, ex35 og ex36 med success. 
 
 \newpage
 
 \section*{Appendiks}
-Jeg har inkluderet \texttt{listmachine.c} som indeholder alle koderne til alle exercises (markeret med kommentarer) samt \texttt{Makefile} i dette appendiks. \texttt{listmachine.c} er den eneste file hvori jeg har tilføjet funktionaliter.
+Jeg har inkluderet \texttt{listmachine.c}, \texttt{listmachine6.c} samt en  \texttt{Makefile} i dette appendiks. \texttt{listmachine.c} indeholder koden til opgaverne 2-5. \texttt{listmachine6.c} indeholder koden til opgade 6.
 
 \label{listmachine}
 \section*{Appendiks A - listmachine.c}
 \lstinputlisting[language=C]{listmachine.c}
 
+\newpage
+
+\section*{Appendiks B - listmachine6.c}
+\lstinputlisting[language=make]{listmachine6.c}
+
 \newpage 
 
-\section*{Appendiks B - Makefile}
+\section*{Appendiks C - Makefile}
 \subsection*{Makefile for \texttt{listmachine.c}}
 \lstinputlisting[language=make]{Makefile}
 
