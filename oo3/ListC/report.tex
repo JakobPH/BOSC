@@ -1,0 +1,152 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Programming/Coding Assignment
+% LaTeX Template
+%
+% This template has been downloaded from:
+% http://www.latextemplates.com
+%
+% Original author:
+% Ted Pavlic (http://www.tedpavlic.com)
+%
+% Note:
+% The \lipsum[#] commands throughout this template generate dummy text
+% to fill the template out. These commands should all be removed when 
+% writing assignment content.
+%
+% This template uses a Perl script as an example snippet of code, most other
+% languages are also usable. Configure them in the "CODE INCLUSION 
+% CONFIGURATION" section.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass{article}
+
+\usepackage{fancyhdr} % Required for custom headers
+\usepackage{lastpage} % Required to determine the last page for the footer
+\usepackage{extramarks} % Required for headers and footers
+\usepackage[usenames,dvipsnames]{color} % Required for custom colors
+\usepackage{graphicx} % Required to insert images
+\usepackage{listings} % Required for insertion of code
+\usepackage{courier} % Required for the courier font
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+\usepackage[utf8]{inputenc}
+
+% Margins
+\topmargin=-0.45in
+\evensidemargin=0in
+\oddsidemargin=0in
+\textwidth=6.5in
+\textheight=9.0in
+\headsep=0.25in
+
+\linespread{1.1} % Line spacing
+
+% Set up the header and footer
+\pagestyle{fancy}
+\lhead{Jens Egholm Pedersen} % Top left header
+\chead{BOSC - Opgave 2} % Top center head
+\rhead{Torsdag d. 31. oktober, 2013} % Top right header
+\lfoot{} % Bottom left footer
+\cfoot{} % Bottom center footer
+\rfoot{Side\ \thepage\ af\ \protect\pageref{LastPage}} % Bottom right footer
+\renewcommand\headrulewidth{0.4pt} % Size of the header rule
+\renewcommand\footrulewidth{0.4pt} % Size of the footer rule
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+\lstset{
+  numbers=left,
+  stepnumber=1,    
+  firstnumber=1,
+  numberfirstline=true
+}
+
+\begin{document}
+
+\section*{BOSC - Opgave 3}
+Dette er min løsning til opgaverne i den tredje obligatoriske opgave. Kodefilerne er vedhæftede som appendiks. 
+
+\subsubsection*{Definitioner}
+Følgende afsnit definerer kort nogle begreber jeg anvender i rapporten. Afsnittet eksisterer primært fordi jeg skriver på dansk, og der således kan opstå begrebsforvirring mellem de danske og engelske termer.
+
+En \textit{basepointer} (BP) det første indeks hvorfra data kan gemmes. Al data som programmet kan tilgå (eller burde få lov til at tilgå) ligger med en positiv afstand fra nul til størrelsen på stakken, relativt til BP. En \textit{stackpointer} (SP) er et tal, der definerer det største indeks, hvor der er gemt data på stakken. Den vil derfor altid være et tal mellem nul og størrelse på stakken - undtagen i starten, hvor intet data ligger på stakken og den derfor er -1. En \texttt{program counter} (PC) er et tal, der beskriver positionen på den stack-frame der skal eksekveres.
+
+En \textit{friliste} er en hæklet liste af døde blokke - altså blokke med hukommelse der ikke længere bliver brugt. Denne friliste konstrueres ved at anvende et referere til et blok-hovede som den første frie blok. Referencen til næste frie blok gemmes som til i det første data-felt efter blok-hovedet. 
+
+En \textit{garbage collector} (GC) er en mekanisme der anvendes til at frigøre hukommelse ved at samle døde blokke og gemme dem på frilisten. Disse blokke kan herefter anvendes af det kørende program til at gemme data i.
+
+En \textit{blok} i hoben er en række af heltal i hoben der består af et \textit{blokhoved} på og nul eller flere heltal som dets data. Blokken inteholder et \textit{markat} som beskriver typen af data i blokken, en længde som beskriver antallet af elementer i blokken samt en farve som bruges til GC.
+
+\subsection*{Opgave 1}
+Før jeg beskriver de faktiske instruktioner, vil jeg gerne kortlægge makroerne \texttt{Tag} og \texttt{Untag}. Siden vi arbejder med garbage collection (GC) har vi brug for en måde at skelne mellem data på stakken og referencer til hoben. For at lave en ikke-konservatic\footnote{En konservativ GC er en GC der antager at alle mønstre kan være tal. Det tjekkes som regel ved at undersøge om tallet, anvendt som pointer, peger på en tilgængelig hukommelsesblok der kan tolkes som data. Det kan bl.a. resultere i falske positive og skabe hukommelseslækager (Sestofte: \textit{Programming Language Concepts}, 2012, s. 183).} GC bliver vi nødt til at kunne identificere adresser, så de kan følges til hoben, så GC algoritmen kan skelne mellem fri og ikke fri hukommelse. Denne identifikation sker ved at tilføje en 1-bit til den mindst betydende position. Det har en del implikationer i praksis som jeg ikke har plads til at diskutere her.
+
+En anden vigtig observation er at alle instruktioner antager at det data der er nødvendigt for at udføre instruktionerne, ligger tilgængelig på stakken. Vi behøver drfor ikke at udføre tjeks for at undersøge om stakken er formatteret korrekt. Hvis den ikke er korrekt fortsætter liste-c med at eksekvere kode indtil der opstår en fejl.
+
+\subsubsection*{i}
+\texttt{ADD} sker ved at pakke de to øverste integers på stakken ud (vha. \texttt{Untag}), så de 'rene' tal kan adderes. Resultatet af additionen pakkes dernæst ind (vha. \texttt{Tag}) og lægges på stakken, på den samme position som det første af de to oprindelige tal. Siden de to tal der tidligere lå på stakken nu er reduceret til et tal, dekrementeres SP.
+
+En \texttt{CstI} instruktion er en simpel instruktion om at lægge en heltalskonstant på stakken. Den markeres som data (vha. \texttt{Tag}) og lægges på den næste ledige plads, hvorefter SP inkrementeres.
+
+\texttt{NIL} skubbes på stakken på samme måde som en \texttt{CstI}-instruktion, men uden at blive beskrevet som data (\texttt{Tag}). Den bliver derfor behandlet som en programreference og ikke et tal.
+l, udpakkes det og sammenlignes med nul. Hvis ikke sammenlignes den rene værdi med nul. Hvis resultatet af den sammenligning er sand, betyder det at sammenligningen er falsk (da nul repræsenterer falsk), hvorfor PC sættes til den værdi der ligger på stakken på indekset af PC så programmet ikke eksekverer den efterfølgende kode. Ellers inkrementeres PC, så næste kodeblok eksekveres.
+
+\texttt{CONS} gemmer to elementer fra stakken på hoben. Først allokeres plads til to elementer (plus et tag) på hoben. De to øverste elementer på stakken gemmes derefter på de to pladser der følger efter tagget (plads \texttt{p} + 1 og \texttt{p} + 2). Referencen til pladsen \texttt{p} gemmes dernæst på stakkens næstøverste plads (hvor det første element lå) og SP dekrementeres, så det andet element også 'glemmes'.
+
+\texttt{CAR} forsøger at kaste den øverste værdi på stakken til en \texttt{word}-reference, og returnerer $-1$ hvis det er en nul-reference. Ellers gemmer den det først element på stakken, som værdi.
+
+Hvis der findes en reference til et element og en reference til en liste på stakken, sætter \texttt{SETCAR} elementet ind som hovedet af listen. Det gøres ved først at hente de to elementer frem som \texttt{word}-referencer, og dernæst gemme det ene element på det første af de to reserverede pladser til listen. SP er i processen dekrementeret, hvilket passer med at listen nu ligger øverst på stakken.
+
+\subsubsection*{ii}
+\texttt{Length}, \texttt{Color} og \texttt{Paint} er alle bit-operationer på et blok-hovede, som i sig selv bare er en unsigned int. \texttt{Length} skifter tallet 2 bits til højre, hvilket fjerner farve-bits'ene. Derefter laves en bitwise sammenligning, der sætter alle bits til nul, undtagen de første 22 bits, som er det antal bits der beskriver længden på blokken.
+
+\texttt{Color} sætter alle bits til nul, undtagen de to første ved at foretage en bitwise og-sammenligning på tallet 3, som kan repræsenteres vha. to bits - samme størrelse som farve-tagget i blok-hovedet.
+
+\texttt{Paint} sætter de to mindst betydende bits til nul ved at foretage en bitwise og-sammenligning på det komplimenterende bit-mønster til tallet tre. Dernæst sættes farven ved at lave en bitwise eller operation på den givne farve. Hvis farven er et byte der har værdier uden for de to mindst betydende cifre, vil det også ændre bit-mønstret i resten af blokken.
+
+\subsubsection*{iii}
+\texttt{allocate} bliver kun kaldt når to elementer sættes sammen til en liste, altså når der skal gemmes elementer i hoben (\texttt{listmachine.c}, linje 294). Det er dermed også det eneste sted hvor instruktionerne er afhængige af at der er plads på hoben, hvorfor det også vil være det eneste sted hvor der er årsag til at GC'en interagerer med den abstrakte maskine.
+
+\subsubsection*{iv}
+\texttt{collect} vil, som koden er nu, kun blive kaldt i tilfælde af at \texttt{allocate} ikke finder plads nok. Det betyder i praksis at instruktioner af og til kan tage meget lang tid, hvis GC algoritmen pludselig skal køre. Det problem kan delvist afhjælpes ved fx at køre GC i en anden tråd, men der vil stadig opstå problemer hvis alle pladser på hoben er optagede og aktive.
+
+\subsection*{Opgave 2}
+Mark fasen i opgave to er løst ved at iterere igennem stakken og filtrere alle tal der ikke er referencer fra. For hver hob-blok itererer vi først dens elementer og markerer dem rekursivt, for til sidst at markere blokken selv. Når fasen er slut er alle blokke, der kan nås fra stakken, således markerede sorte. Dermed kan sweep fasen se hvilke blokke der er 'aktive' og hvilke der er 'døde'.
+
+Sweep fasen løber hoben igennem for blokke der har en længde over nul. For nuværende er blokke uden længde ikke interessante, da de ikke kan lægges på frilisten siden de ikke har pladsen til en reference til næste element. De fundne blokke undersøges for, om det kan nås fra stakken (er farvet sorte). Hvis de kan, farves de hvide så vi ved næste mark fase kan undersøge om de stadig er aktive. Hvis de ikke kan nås fra stakken og derfor er farvet hvide, farver vi dem blå for at indikere at de er frie og gemmer dem i frilisten. Det gøres i praksis ved at lade det første til i den frie blok være en pointer tl den nuværende freelist (altså det næste frie element). Dernæst sættes frilisten til at pege på den frie blok, således at den hæklede liste opretholdes. 
+
+Løsningen er testet ved at køre eksempel 30, 35 og 36. Alle med det forventede resultat.
+
+\subsection*{Opgave 3}
+Forskellen fra opgave to er at vi her i linje 543 tjekker om det efterfølgende element er frit (hvidt). Hvis det er, forøger vi den nuværende bloks størrelse med den efterfølgende bloks størrelse plus en (for at overskrive det ekstra blok-hoved). Fremfor at returnere \texttt{void} returnerer \texttt{sweepBlock3} nu også et tal, som repræsenterer længden af den sweepede blok, da den kan variere alt efter om den efterfølgende blok er fri.
+
+Ligesom ovenfor er løsningen testet med eksempel 30, 35 og 36. Resultatet var en markant reduktion i antallet af blokke, siden de blev slået sammen.
+
+\subsection*{Opgave 4}
+Men det kan gøres endnu bedre. I stedet for kun at undersøge det efterfølgende element, leder \texttt{sweepBlock4} efter samtlige efterfølgende blokke der er frie. Det gøres ved at gemme længden på den samlede og adressen på den næste blok opdateret i en while-løkke. Hvis farven på den næste blok er hvid, lægges den til den samlede blok-længde og adressen opdateres til næste blok på hoben. Når løkken har termineret konstruerer vi et nyt blok-hoved til den første blok og lægger den på frilisten.
+
+Ved samme test som ovenfor blev antallet af blokke på frilisten yderligere reduceret, siden samtlige sideliggende blokke nu kobles sammen.
+
+
+
+\newpage
+
+\section*{Appendiks}
+Jeg har inkluderet \texttt{listmachine.c} som indeholder alle koderne til alle exercises (markeret med kommentarer) samt \texttt{Makefile} i dette appendiks. \texttt{listmachine.c} er den eneste file hvori jeg har tilføjet funktionaliter.
+
+\label{listmachine}
+\section*{Appendiks A - listmachine.c}
+\lstinputlisting[language=C]{listmachine.c}
+
+\newpage 
+
+\section*{Appendiks B - Makefile}
+\subsection*{Makefile for \texttt{listmachine.c}}
+\lstinputlisting[language=make]{Makefile}
+
+\label{lastPage}
+
+\end{document}
