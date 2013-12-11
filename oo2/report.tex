@@ -32,8 +32,9 @@
 \usepackage{graphicx} % Required to insert images
 \usepackage{listings} % Required for insertion of code
 \usepackage{courier} % Required for the courier font
-\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
 \usepackage[utf8]{inputenc}
+%\usepackage{hyperref}
+\usepackage[pdftex,pdfborderstyle={/S/U/W 0},hyperfootnotes=false]{hyperref}
 
 % Margins
 \topmargin=-0.45in
@@ -71,6 +72,9 @@
 Dette er min løsning til opgaverne i den anden obligatoriske opgave. Kodefilerne er vedhæftet som appendiks. 
 
 \subsection*{Opgave 1}
+\subsubsection*{1.1}
+Som det fremgår af \nameref{sec:sqrtcode} er programmet blevet skrevet om til at kunne håndtere flere tråde. Det sker ved at starte \texttt{n} antal tråde og i linje 41 oprette trådene med en reference til \texttt{sum} metoden, som beregner kvadratrødderne. For at forberede til næste opgave har jeg anvendt en struct til at gemme instruktionssættet til hver tråd. Dermed kan instruktinonssættet gives videre til hver tråd uafhængigt af hinanden og summeres til sidst (linje 45).
+\subsubsection*{1.2} 
 Følgende output viser en af kørslerne af programmet \texttt{sqrt.c}:
 \begin{verbatim}
 Thread : 1 	 Speedup: 1.000000 	 Efficiency: 1.000000
@@ -88,15 +92,19 @@ Threads: 4096 	 Speedup: 1.353659 	 Efficiency: 0.000330
 Threads: 8192 	 Speedup: 0.740000 	 Efficiency: 0.000090
 Threads: 16384 	 Speedup: 0.417293 	 Efficiency: 0.000025
 \end{verbatim}
-Det ses at det maksimale speedup findes ved 128 tråde, som er hele 5.8 gange mere effektivt end kun 1 tråd. 
+Tallene er fundet ved a lade \texttt{sqrt.c} iterere over 14 forskellige antal tråde, der fordobles for hver iteration. Det var forventeligt at det største udbytte fandtes ved få tråde, hvorfor det er mest interessant at have data ved lavere antal tråde (1-512). Fordoblingen er derfor hensigtsmæssig for at kunne se effekten ved et større antal tråde.
+
+Det ses at det maksimale speedup findes ved 128 tråde, som er hele 5.8 gange mere effektivt end kun 1 tråd. Derimod dykker grafen ret hurtigt igen, grundet \textit{overhead} ved de mange tråde. Ved de 16384 tråde bliver det lidt under halvt så effektivt som en tråd. 
+
+Det virker imponerende at computeren kan trække så mange tråde og stadig nå en relativt god effekt. Jeg antager at det har noget at gøre med min firekernede CPU og dens virtualiserede arkitektur. Det vil tildels også forklare hvorfor den får så god effekt ved 128 tråde.
 
 \subsection*{Opgave 2}
 Problemet med flere tråde i dette eksempel er særligt det bogen nævner som 'data dependency': deling af ressourcer. Når en tråd eksempelvis beslutter sig for at lægge et nyt element i listen kan den risikere at blive afbrudt midt i kaldet til \texttt{list\_add}, eksempelvis lige efter den har sat \texttt{last->next}. Den anden tråd der afbryder har også tænkt sig at indsætte et element, men når modsat den første tråd at gennemføre. Når den første tråd fortsætter, har den anden tråd overskrevet referencen til \texttt{next} i det sidste element i listen, men det ved den første tråd jo ikke, så den indsætter elementet i halen. Vi har nu en inkonsistent liste, hvis haleelement ikke har en pegepind fra det forrige element i listen.
 
-Den færdige implementation kan findes i bilag \ref{listcode}.
+Den færdige implementation kan findes i \nameref{sec:listcode}.
 
 \subsection*{Opgave 3}
-Som beskrevet i opgaven har jeg skrevet programmet til at tage fire inputs: antal producers, antal consumers, størrelsen af den delte buffer og antal produkter der skal produceres. Alle producers og consumers kører i deres egen tråd hvor de 'sover' hver gang de producerer eller konsumerer. Pga. semaphorerne er der ingen starvation eller deadlocks, og programmet venter til sidst på alle tråde før det slutter. Programkoden findes i appendiks \ref{prodconscode}.
+Som beskrevet i opgaven har jeg skrevet programmet til at tage fire inputs: antal producers, antal consumers, størrelsen af den delte buffer og antal produkter der skal produceres. Alle producers og consumers kører i deres egen tråd hvor de 'sover' hver gang de producerer eller konsumerer. Pga. semaphorerne er der ingen starvation eller deadlocks, og programmet venter til sidst på alle tråde før det slutter. Programkoden findes i \nameref{sec:prodconscode}.
 
 En kørsel af programmet kan ses herunder:
 \begin{verbatim}
@@ -135,29 +143,25 @@ Jeg allokerer resourcer fra linje 172 vha. \texttt{malloc} og tjekker derefter i
 \section*{Appendiks}
 Jeg har inkluderet \texttt{sqrt.c}, \texttt{list.c}, \texttt{prodcons.c}, \texttt{banker.c} samt \texttt{Makefile} i dette appendiks, som er de eneste filer hvori jeg har tilføjet funktionalitet.
 
-\label{sqrtcode}
-\section*{Appendiks A - sqrt.c}
+\section*{Appendiks A - sqrt.c} \label{sec:sqrtcode}
 \lstinputlisting[language=C]{sqrt.c}
 
 \newpage
-\label{listcode}
-\section*{Appendiks B - list.c}
+\section*{Appendiks B - list.c} \label{sec:listcode}
 \lstinputlisting[language=C]{list/list.c}
 
 \newpage
-\label{prodconscode}
-\section*{Appendiks C - prodcons.c}
+\section*{Appendiks C - prodcons.c} \label{sec:prodconscode}
 \lstinputlisting[language=C]{prodcons.c}
 
 \newpage
-\label{bankercode}
-\section*{Appendiks D - banker.c}
+\section*{Appendiks D - banker.c} \label{sec:bankercode}
 \lstinputlisting[language=C]{banker/banker.c}
 
 \newpage 
 
 \section*{Appendiks E - Makefiles}
-\subsection*{Makefile for \texttt{sqrt} and \texttt{prodcons}}
+\subsection*{Makefile for \texttt{sqrt}, \texttt{prodcons} and report}
 \lstinputlisting[language=make]{Makefile}
 \subsection*{Makefile for \texttt{list}}
 \lstinputlisting[language=make]{list/Makefile}

@@ -9,6 +9,13 @@ sqrt: sqrt.o
 prodcons: list prodcons.o
 	gcc -o $@ list/list.o prodcons.o -lpthread -ggdb
 
+report:
+	pdflatex report.tex
+
 clean:
-	rm sqrt.o* 
-	rm sqrt
+	rm -f sqrt.o* 
+	rm -f sqrt
+	rm -f report.aux
+	rm -f report.out
+	rm -f report.log
+	rm -f report.pdf
